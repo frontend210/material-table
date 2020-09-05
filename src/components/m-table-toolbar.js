@@ -2,6 +2,10 @@
 import Checkbox from "@material-ui/core/Checkbox";
 import FormControlLabel from "@material-ui/core/FormControlLabel";
 import IconButton from "@material-ui/core/IconButton";
+import Button from "@material-ui/core/Button";
+import CreateIcon from "@material-ui/icons/Create";
+import UnfoldLessIcon from "@material-ui/icons/UnfoldLess";
+import UnfoldMoreIcon from "@material-ui/icons/UnfoldMore";
 import InputAdornment from "@material-ui/core/InputAdornment";
 import Menu from "@material-ui/core/Menu";
 import MenuItem from "@material-ui/core/MenuItem";
@@ -178,16 +182,47 @@ export class MTableToolbar extends React.Component {
 
     return (
       <div>
+        <span>
+          <Tooltip title={localization.collapseAll}>
+            <IconButton
+              color="inherit"
+              onClick={this.props.onCollapseAll}
+              aria-label={localization.collapseAll}
+              /* disabled={props.expandableRowsHeader === false}
+               className={props.buttonClass} */
+            >
+              <UnfoldLessIcon
+                id="expandable-button" /*className={props.iconIndeterminateClass}*/
+              />
+            </IconButton>
+          </Tooltip>
+        </span>
+        <span>
+          <Tooltip title={localization.expandAll}>
+            <IconButton
+              color="inherit"
+              onClick={this.props.onExpandAll}
+              aria-label={localization.expandAll}
+              /* disabled={props.expandableRowsHeader === false}
+               className={props.buttonClass} */
+            >
+              <UnfoldMoreIcon
+                id="expandable-button" /*className={props.iconClass}*/
+              />
+            </IconButton>
+          </Tooltip>
+        </span>
+
         {this.props.columnsButton && (
           <span>
             <Tooltip title={localization.showColumnsTitle}>
               <IconButton
                 color="inherit"
-                onClick={(event) =>
+                onClick={(event) => {
                   this.setState({
                     columnsButtonAnchorEl: event.currentTarget,
-                  })
-                }
+                  });
+                }}
                 aria-label={localization.showColumnsAriaLabel}
               >
                 <this.props.icons.ViewColumn />
@@ -219,20 +254,46 @@ export class MTableToolbar extends React.Component {
                         htmlFor={`column-toggle-${col.tableData.id}`}
                         disabled={col.removable === false}
                       >
-                        <Checkbox
-                          checked={!col.hidden}
-                          id={`column-toggle-${col.tableData.id}`}
-                          onChange={() =>
-                            this.props.onColumnsChanged(col, !col.hidden)
-                          }
-                        />
-                        <span>{col.title}</span>
+                        <span>
+                          <Checkbox
+                            checked={!col.hidden}
+                            id={`column-toggle-${col.tableData.id}`}
+                            onChange={() =>
+                              this.props.onColumnsChanged(col, !col.hidden)
+                            }
+                          />
+                          <span>{col.title}</span>
+                        </span>
+                        <IconButton
+                          data-testid={"edit-col-btn"}
+                          aria-label={"Edit Column"}
+                          className={classes.editButton}
+                          onClick={() => this.props.onColumnsEdited(col, {})}
+                        >
+                          <CreateIcon color="primary" fontSize="small" />
+                        </IconButton>
                       </MenuItem>
                     </li>
                   );
                 }
                 return null;
               })}
+              <MenuItem
+                key={"add-column"}
+                className={classes.formControlLabel}
+                style={{
+                  opacity: 1,
+                  fontWeight: 600,
+                  fontSize: 12,
+                }}
+              >
+                <Button
+                  color="primary"
+                  onClick={() => this.props.onColumnsAdded({})}
+                >
+                  {"Add Column"}
+                </Button>
+              </MenuItem>
             </Menu>
           </span>
         )}
@@ -379,6 +440,8 @@ MTableToolbar.defaultProps = {
   localization: {
     addRemoveColumns: "Add or remove columns",
     nRowsSelected: "{0} row(s) selected",
+    expandAll: "Expand All",
+    collapseAll: "Collapse All",
     showColumnsTitle: "Show Columns",
     showColumnsAriaLabel: "Show Columns",
     exportTitle: "Export",
@@ -409,7 +472,11 @@ MTableToolbar.propTypes = {
   components: PropTypes.object.isRequired,
   getFieldValue: PropTypes.func.isRequired,
   localization: PropTypes.object.isRequired,
+  onExpandAll: PropTypes.func,
+  onCollapseAll: PropTypes.func,
   onColumnsChanged: PropTypes.func.isRequired,
+  onColumnsEdited: PropTypes.func.isRequired,
+  onColumnsAdded: PropTypes.func.isRequired,
   dataManager: PropTypes.object.isRequired,
   searchText: PropTypes.string,
   onSearchChanged: PropTypes.func.isRequired,
@@ -467,6 +534,12 @@ export const styles = (theme) => ({
   formControlLabel: {
     paddingLeft: theme.spacing(1),
     paddingRight: theme.spacing(1),
+    display: "flex",
+    "align-items": "center",
+    "justify-content": "space-between",
+  },
+  editButton: {
+    float: "right",
   },
 });
 

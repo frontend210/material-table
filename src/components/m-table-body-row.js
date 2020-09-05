@@ -105,6 +105,7 @@ export default class MTableBodyRow extends React.Component {
       </TableCell>
     );
   }
+
   renderSelectionColumn() {
     let checkboxProps = this.props.options.selectionProps || {};
     if (typeof checkboxProps === "function") {

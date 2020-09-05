@@ -18,12 +18,15 @@ export default class DataManager {
   selectedCount = 0;
   treefiedDataLength = 0;
   treeDataMaxLevel = 0;
+  // TODO: add new option prop for allowedTreeDataMaxLevel
+  allowedTreeDataMaxLevel = 5;
   groupedDataLength = 0;
   defaultExpanded = false;
   bulkEditOpen = false;
   bulkEditChangedRows = {};
 
   data = [];
+  originalColumns = [];
   columns = [];
 
   filteredData = [];
@@ -56,46 +59,57 @@ export default class DataManager {
       return row;
     });
 
+    // TODO: remove console.logs
+    // console.log('setData -> this.data', this.data);
+    // console.log('setData -> this.selectedCount', this.selectedCount);
     this.filtered = false;
   }
 
   setColumns(columns) {
+    this.originalColumns = JSON.parse(JSON.stringify(columns));
+    // TODO: remove console.logs
+    // console.log('originalColumns', this.originalColumns);
+
     const undefinedWidthColumns = columns.filter(
       (c) => c.width === undefined && !c.hidden
     );
     let usedWidth = ["0px"];
 
-    this.columns = columns.map((columnDef, index) => {
-      columnDef.tableData = {
-        columnOrder: index,
-        filterValue: columnDef.defaultFilter,
-        groupOrder: columnDef.defaultGroupOrder,
-        groupSort: columnDef.defaultGroupSort || "asc",
-        width:
-          typeof columnDef.width === "number"
-            ? columnDef.width + "px"
-            : columnDef.width,
-        initialWidth:
-          typeof columnDef.width === "number"
-            ? columnDef.width + "px"
-            : columnDef.width,
-        additionalWidth: 0,
-        ...columnDef.tableData,
-        id: index,
-      };
+    this.columns = columns.map((columnDef, index) =>
+      this.buildColumnTableData(columnDef, index, usedWidth)
+    );
 
-      if (columnDef.tableData.width !== undefined) {
-        usedWidth.push(columnDef.tableData.width);
-      }
-
-      return columnDef;
-    });
-
-    usedWidth = "(" + usedWidth.join(" + ") + ")";
+    usedWidth = `(${usedWidth.join(" + ")})`;
     undefinedWidthColumns.forEach((columnDef) => {
       columnDef.tableData.width = columnDef.tableData.initialWidth = `calc((100% - ${usedWidth}) / ${undefinedWidthColumns.length})`;
     });
   }
+
+  buildColumnTableData = (columnDef, index, usedWidth) => {
+    columnDef.tableData = {
+      columnOrder: index,
+      filterValue: columnDef.defaultFilter,
+      groupOrder: columnDef.defaultGroupOrder,
+      groupSort: columnDef.defaultGroupSort || "asc",
+      width:
+        typeof columnDef.width === "number"
+          ? columnDef.width + "px"
+          : columnDef.width,
+      initialWidth:
+        typeof columnDef.width === "number"
+          ? columnDef.width + "px"
+          : columnDef.width,
+      additionalWidth: 0,
+      ...columnDef.tableData,
+      id: index,
+    };
+
+    if (columnDef.tableData.width !== undefined) {
+      usedWidth.push(columnDef.tableData.width);
+    }
+
+    return columnDef;
+  };
 
   setDefaultExpanded(expanded) {
     this.defaultExpanded = expanded;
@@ -271,9 +285,26 @@ export default class DataManager {
     column.hiddenByColumnsButton = hidden;
   }
 
+  onColumnsEdited(column, { title, field, type, lookup }) {
+    column.title = title;
+  }
+
+  onColumnsAdded({ title, field, type, lookup, removable = true }) {
+    this.originalColumns.push({ title, field, type, lookup, removable });
+    this.setColumns(this.originalColumns);
+  }
+
   changeTreeExpand(path) {
     const rowData = this.findDataByPath(this.sortedData, path);
     rowData.tableData.isTreeExpanded = !rowData.tableData.isTreeExpanded;
+  }
+
+  expandAllTree() {
+    this.sortedData.forEach((el) => (el.tableData.isTreeExpanded = true));
+  }
+
+  collapseAllTree() {
+    this.sortedData.forEach((el) => (el.tableData.isTreeExpanded = false));
   }
 
   changeDetailPanelType(type) {
@@ -599,6 +630,14 @@ export default class DataManager {
       this.pageData();
     }
 
+    // TODO: remove console.logs
+    // console.log('data', this.data);
+    // console.log('sortedData', this.sortedData);
+    // console.log('pagedData', this.pagedData);
+    // console.log('treefiedData', this.treefiedData);
+    // console.log('filteredData', this.filteredData);
+    // console.log('searchedData', this.searchedData);
+
     return {
       columns: this.columns,
       currentPage: this.currentPage,
@@ -838,7 +877,11 @@ export default class DataManager {
 
   treefyData() {
     this.sorted = this.paged = false;
-    this.data.forEach((a) => (a.tableData.childRows = null));
+    this.data.forEach((row) => {
+      row.tableData.childRows = null;
+      // TODO: add new prop for default behavior of tree expansion/collapsion on load
+      row.tableData.isTreeExpanded = true;
+    });
     this.treefiedData = [];
     this.treefiedDataLength = 0;
     this.treeDataMaxLevel = 0;
@@ -884,11 +927,21 @@ export default class DataManager {
         }
       }
     };
+    // TODO: remove console.logs
+    // console.log('TreefyData() -> Before addRow()', this.data);
 
     // Add all rows initially
-    this.data.forEach((rowData) => {
-      addRow(rowData);
-    });
+    this.data.forEach((rowData) => addRow(rowData));
+    // TODO: remove console.logs
+    // console.log('TreefyData() -> After addRow()', this.data);
+    // console.log('TreefyData() -> treefiedData', this.treefiedData)
+    // console.log('TreefyData() -> treefiedDataLength', this.treefiedDataLength);
+    // console.log('TreefyData() -> treeDataMaxLevel', this.treeDataMaxLevel);
+    if (this.allowedTreeDataMaxLevel < this.treeDataMaxLevel) {
+      /* eslint-disable no-undef */
+      alert(`Subtask level exceeds max value: ${this.treeDataMaxLevel}`);
+    }
+
     const markForTreeRemove = (rowData) => {
       let pointer = this.treefiedData;
       rowData.tableData.path.forEach((pathPart) => {
@@ -916,7 +969,7 @@ export default class DataManager {
         !this.columns.some((columnDef) => columnDef.tableData.filterValue)
       ) {
         if (rowData.tableData.isTreeExpanded === undefined) {
-          var isExpanded =
+          const isExpanded =
             typeof this.defaultExpanded === "boolean"
               ? this.defaultExpanded
               : this.defaultExpanded(rowData);

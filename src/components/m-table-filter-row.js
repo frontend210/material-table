@@ -38,6 +38,7 @@ class MTableFilterRow extends React.Component {
     ...MTableFilterRow.defaultProps.localization,
     ...this.props.localization,
   });
+
   getLocalizedFilterPlaceHolder = (columnDef) =>
     columnDef.filterPlaceholder ||
     this.getLocalizationData().filterPlaceHolder ||

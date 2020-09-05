@@ -82,6 +82,10 @@ export default class MaterialTable extends React.Component {
           : "";
     }
 
+    // TODO: remove console logs
+    // console.log('columns', props.columns);
+    // console.log('tableData', props.data);
+
     this.dataManager.setColumns(props.columns);
     this.dataManager.setDefaultExpanded(props.options.defaultExpanded);
     this.dataManager.changeRowEditing();
@@ -334,6 +338,24 @@ export default class MaterialTable extends React.Component {
     });
   };
 
+  onColumnsEdited = (column, { title = "EditName", field, type, lookup }) => {
+    this.dataManager.onColumnsEdited(column, { title, field, type, lookup });
+    this.setState(this.dataManager.getRenderState(), () => {
+      // TODO: add a callback prop
+      // this.props.onColumnsEdited &&
+      // this.props.onColumnsEdited();
+    });
+  };
+
+  onColumnsAdded = ({ title = "NewName", field = "newCol", type, lookup }) => {
+    this.dataManager.onColumnsAdded({ title, field, type, lookup });
+    this.setState(this.dataManager.getRenderState(), () => {
+      // TODO: add a callback prop
+      // this.props.onColumnsAdded &&
+      // this.props.onColumnsAdded();
+    });
+  };
+
   onChangeGroupOrder = (groupedColumn) => {
     this.dataManager.changeGroupOrder(groupedColumn.tableData.id);
     this.setState(this.dataManager.getRenderState());
@@ -573,9 +595,11 @@ export default class MaterialTable extends React.Component {
       this.setState(this.dataManager.getRenderState());
     }
   };
+
   retry = () => {
     this.onQueryChange(this.state.query);
   };
+
   onQueryChange = (query, callback) => {
     query = { ...this.state.query, ...query, error: this.state.errorState };
     this.setState({ isLoading: true, errorState: undefined }, () => {
@@ -697,6 +721,20 @@ export default class MaterialTable extends React.Component {
     this.setState(this.dataManager.getRenderState(), () => {
       this.props.onTreeExpandChange &&
         this.props.onTreeExpandChange(data, data.tableData.isTreeExpanded);
+    });
+  };
+
+  onExpandAllTree = () => {
+    this.dataManager.expandAllTree();
+    this.setState(this.dataManager.getRenderState(), () => {
+      // TODO: add new callback prop
+    });
+  };
+
+  onCollapseAllTree = () => {
+    this.dataManager.collapseAllTree();
+    this.setState(this.dataManager.getRenderState(), () => {
+      // TODO: add new callback prop
     });
   };
 
@@ -1005,6 +1043,10 @@ export default class MaterialTable extends React.Component {
               onSearchChanged={this.onSearchChangeDebounce}
               dataManager={this.dataManager}
               onColumnsChanged={this.onChangeColumnHidden}
+              onColumnsEdited={this.onColumnsEdited}
+              onColumnsAdded={this.onColumnsAdded}
+              onExpandAll={this.onExpandAllTree}
+              onCollapseAll={this.onCollapseAllTree}
               localization={{
                 ...MaterialTable.defaultProps.localization.toolbar,
                 ...this.props.localization.toolbar,
